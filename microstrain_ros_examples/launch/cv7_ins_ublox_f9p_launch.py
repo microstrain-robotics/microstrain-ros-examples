@@ -1,17 +1,19 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import LaunchConfigurationEquals, LaunchConfigurationNotEquals
-from launch.substitutions import LaunchConfiguration
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node, PushRosNamespace
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import LaunchConfigurationEquals
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, FindExecutable, Command
+from launch_ros.actions import Node
 from launch_ros.actions.node import ParameterFile
+from launch_ros.parameter_descriptions import ParameterValue
 
 from ament_index_python.packages import get_package_share_directory
 
 _PACKAGE_NAME = 'microstrain_ros_examples'
 
 _CV7_INS_UBLOX_F9P_PARAMS_FILE = os.path.join(get_package_share_directory(_PACKAGE_NAME), 'config', 'cv7_ins_ublox_f9p.yml')
+_CV7_INS_UBLOX_F9P_URDF_FILE   = os.path.join(get_package_share_directory(_PACKAGE_NAME), 'urdf', 'cv7_ins_ublox_f9p.urdf.xacro')
+_CV7_INS_UBLOX_F9P_RVIZ_FILE   = os.path.join(get_package_share_directory(_PACKAGE_NAME), 'rviz', 'cv7_ins_ublox_f9p.rviz')
 
 def generate_launch_description():
 
@@ -33,6 +35,9 @@ def generate_launch_description():
     DeclareLaunchArgument('ntrip_username',   default_value='user',         description='Username to use to authenticate with the NTRIP caster'),
     DeclareLaunchArgument('ntrip_password',   default_value='pass',         description='Password to use to authenticate with the NTRIP caster'),
     DeclareLaunchArgument('ntrip_ssl',        default_value='false',        description='Whether or not to connect using SSL to the NTRIP caster'),
+
+    # Rviz parameters
+    DeclareLaunchArgument('rviz', default_value='true', description='Whether or not to start Rviz to view the sensor'),
 
     # Allow the includer to specify whatever parameter file they want
     DeclareLaunchArgument('params_file', default_value=_CV7_INS_UBLOX_F9P_PARAMS_FILE, description='Path to file that contains user defined parameters'),
@@ -77,6 +82,28 @@ def generate_launch_description():
   )
   launch_description.append(ublox_f9p_node)
 
+  # Robot Desctiption
+  robot_urdf_file_arg = DeclareLaunchArgument(
+    'robot_urdf_file', default_value=_CV7_INS_UBLOX_F9P_URDF_FILE, description='Path to the URDF file that will represent your robot'
+  )
+  robot_description_command_arg = DeclareLaunchArgument(
+    'robot_description_command', default_value=[PathJoinSubstitution([FindExecutable(name='xacro')]), ' ', LaunchConfiguration('robot_urdf_file')]
+  )
+  robot_description_content = ParameterValue(
+    Command(LaunchConfiguration('robot_description_command')),
+    value_type=str
+  )
+  robot_state_publisher_node = Node(
+    package='robot_state_publisher',
+    executable='robot_state_publisher',
+    parameters=[{
+      'robot_description': robot_description_content,
+    }]
+  )
+  launch_description.append(robot_urdf_file_arg)
+  launch_description.append(robot_description_command_arg)
+  launch_description.append(robot_state_publisher_node)
+
   # NTRIP Client node
   ntrip_node = Node(
     package    = 'ntrip_client',
@@ -94,6 +121,18 @@ def generate_launch_description():
     ]
   )
   launch_description.append(ntrip_node)
+
+  # Run rviz to view the state of the application
+  rviz_node = Node(
+    package='rviz2',
+    executable='rviz2',
+    output='log',
+    condition=LaunchConfigurationEquals('rviz', 'true'),
+    arguments=[
+      '-d', _CV7_INS_UBLOX_F9P_RVIZ_FILE
+    ]
+  )
+  launch_description.append(rviz_node)
 
   return LaunchDescription(launch_description)
   

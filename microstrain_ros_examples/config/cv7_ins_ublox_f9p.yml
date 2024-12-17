@@ -115,8 +115,8 @@
     # Connect to the requested port
     device: $(var ublox_f9p_port)
 
-    # Set the frame_id to the user requested frame_id
-    frame_id: "ublox_f9p_link"
+    # This frame_id represents the location of the antenna, not the chip.
+    frame_id: "ublox_f9p_antenna_link"
 
     # Enable all the constellations
     gnss:

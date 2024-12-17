@@ -5,7 +5,7 @@ project(microstrain_ros_examples)
 find_package(ament_cmake REQUIRED)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(DIRECTORY config launch
+install(DIRECTORY config launch rviz urdf
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="test">
+  <!-- Materials to make the antennas stand out from the robot and antenna bar -->
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1.0" />
+  </material>
+
+  <!-- Include the CV7 xacro file to make it easier to place -->
+  <xacro:include filename="$(find microstrain_inertial_description)/urdf/cv7.urdf.xacro" />
+
+  <!-- Pretend robot (just a cylinder) -->
+  <link name="base_link" >
+    <visual>
+      <origin xyz="0 0 0.15" rpy="0 0 0" />
+      <geometry>
+        <cylinder length="0.3" radius="0.2" />
+      </geometry>
+    </visual>
+  </link> 
+
+  <!-- Fake mounting plate -->
+  <link name="mounting_plate_link" >
+    <visual>
+      <geometry>
+        <box size="0.5 0.5 0.01" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="base_to_mounting_plate" type="fixed">
+    <parent link="base_link" />
+    <child link="mounting_plate_link" />
+    <origin xyz="0 0 0.305" />
+  </joint>
+
+  <!-- Antennas offset from the end of the antenna bar by 5 cm -->
+  <link name="ublox_f9p_antenna_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.01" radius="0.02" />
+      </geometry>
+      <material name="black" />
+    </visual>
+  </link>
+  <joint name="mounting_plate_to_ublox_f9p_antenna" type="fixed">
+    <parent link="mounting_plate_link" />
+    <child link="ublox_f9p_antenna_link" />
+    <origin xyz="0 -0.2 0.01" />
+  </joint>
+
+  <!-- GQ7 mounted in the center of the antenna bar -->
+  <xacro:cv7 parent="mounting_plate_link" name="cv7_ins_link">
+    <origin xyz="0 0 0.005" rpy="0 0 0" />
+  </xacro:cv7>
+</robot>
